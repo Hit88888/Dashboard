@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM Intake Dashboard</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div>
+    <h1>CRM Intake Dashboard</h1>
+    <p>Enter daily application data · Auto-updating charts · Export to Excel &amp; PowerPoint</p>
+  </div>
+  <div class="header-actions">
+    <button type="button" class="btn btn-secondary" id="btnImportExcel">Import Excel</button>
+    <button type="button" class="btn btn-secondary" id="btnImportJson">Restore Backup</button>
+    <button type="button" class="btn btn-primary" id="btnExportExcel">Download Excel</button>
+    <button type="button" class="btn btn-primary" id="btnExportPptx">Download PPTX</button>
+  </div>
+</header>
+
+<input type="file" id="fileImportExcel" accept=".xlsx,.xls" hidden>
+<input type="file" id="fileImportJson" accept=".json" hidden>
+
+<main class="main">
+
+  <div class="panel-card" style="margin-bottom:1rem">
+    <div class="panel-body">
+      <div class="intake-bar">
+        <div class="field">
+          <label for="intakeSelect">Select Intake</label>
+          <select id="intakeSelect"></select>
+        </div>
+        <div class="field">
+          <label for="intakeName">Report Name</label>
+          <input type="text" id="intakeName" placeholder="May to Aug intake report">
+        </div>
+        <div class="field">
+          <label for="startMonth">Intake Start Month (16th)</label>
+          <select id="startMonth"></select>
+        </div>
+        <div class="field">
+          <label for="startYear">Year</label>
+          <select id="startYear"></select>
+        </div>
+        <div class="field">
+          <label>Intake Period</label>
+          <div class="intake-period" id="intakePeriod">—</div>
+        </div>
+        <div class="field">
+          <label for="reportDate">Report Date</label>
+          <input type="text" id="reportDate" placeholder="23 June 2026">
+        </div>
+        <div class="field">
+          <label for="preparedBy">Prepared By</label>
+          <input type="text" id="preparedBy" placeholder="AlwsHappy">
+        </div>
+      </div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <button type="button" class="btn btn-outline btn-sm" id="btnNewIntake">+ New Intake</button>
+        <button type="button" class="btn btn-outline btn-sm" id="btnDeleteIntake">Delete Intake</button>
+        <button type="button" class="btn btn-outline btn-sm" id="btnResetSample">Reset to Sample Data</button>
+        <button type="button" class="btn btn-outline btn-sm" id="btnExportJson">Backup JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <button type="button" class="tab active" data-tab="data">Data Entry</button>
+    <button type="button" class="tab" data-tab="dashboard">Analytics Dashboard</button>
+  </nav>
+
+  <!-- ═══ TAB 1: DATA ENTRY ═══ -->
+  <section id="tab-data" class="tab-panel active">
+
+    <div class="excel-report">
+      <div class="excel-top">
+        <div class="excel-title-block">
+          <input type="text" id="excelTitle" class="excel-title" value="May to Aug intake report">
+          <input type="text" id="excelMeta" class="meta-input" value="Report Date: 23 June 2026 · Prepared by: AlwsHappy">
+        </div>
+        <div class="excel-status-sidebar">
+          <table>
+            <thead>
+              <tr><th>Status Component</th><th>Total Applications</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Active</td><td id="sidebarActive">—</td></tr>
+              <tr><td>Withdrawn</td><td id="sidebarWithdrawn">—</td></tr>
+              <tr><td>On Hold</td><td id="sidebarOnHold">—</td></tr>
+              <tr><td>Rejected</td><td id="sidebarRejected">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-box"><div class="lbl">TOTAL APPS</div><div class="val" id="kpi_total">—</div></div>
+        <div class="kpi-box"><div class="lbl">VALID APPS</div><div class="val" id="kpi_valid">—</div></div>
+        <div class="kpi-box"><div class="lbl">ACTIVE APPS</div><div class="val" id="kpi_active">—</div></div>
+        <div class="kpi-box"><div class="lbl">WITHDRAWN</div><div class="val" id="kpi_withdrawn">—</div></div>
+        <div class="kpi-box"><div class="lbl">REJECTED</div><div class="val" id="kpi_rejected">—</div></div>
+      </div>
+
+      <div class="toolbar">
+        <button type="button" class="btn btn-sm btn-success" id="btnAddCourse">+ Add Course</button>
+        <button type="button" class="btn btn-sm btn-outline" id="btnAddColumn">+ Add Column</button>
+        <span class="hint">Valid auto-calculates (Total − Withdrawn − Rejected) · Drag headers to reorder · Summary syncs from latest daily report</span>
+      </div>
+
+      <div class="data-table-wrap">
+        <table class="data-table" id="courseDataTable">
+          <thead id="dataTableHead"></thead>
+          <tbody id="dataTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel-card" style="margin-top:1rem">
+      <div class="panel-head">
+        <h2>Daily Application Log <span class="auto-badge" id="dailyAutoBadge">Auto-syncs summary</span></h2>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+          <button type="button" class="btn btn-sm btn-success" id="btnAddDaily">+ Add Daily Report</button>
+          <button type="button" class="btn btn-sm btn-outline" id="btnAddDailyColumn">+ Add Column</button>
+          <button type="button" class="btn btn-sm btn-outline" id="btnSyncFromDaily">Recalculate Summary</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="paste-zone">
+          <label style="font-size:0.75rem;font-weight:600;color:var(--muted);display:block;margin-bottom:0.35rem">Paste from Google Sheets / CRM</label>
+          <textarea id="pasteArea" placeholder="Copy rows from your CRM Google Sheet and paste here (Ctrl+V), then click Import Paste…"></textarea>
+          <div class="paste-actions">
+            <button type="button" class="btn btn-sm btn-success" id="btnImportPaste">Import Paste</button>
+            <button type="button" class="btn btn-sm btn-outline" id="btnClearPaste">Clear</button>
+            <span class="paste-hint">Supports: Date + Course + metrics per row, or Date + UG/PG/Top-Up columns. One report per date — summary uses the latest date.</span>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="daily-grid" id="dailyLogTable">
+            <thead id="dailyLogHead"></thead>
+            <tbody id="dailyLogBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TAB 2: ANALYTICS ═══ -->
+  <section id="tab-dashboard" class="tab-panel">
+
+    <div class="export-bar">
+      <button type="button" class="btn btn-success" id="btnExportExcel2">Download Excel Report</button>
+      <button type="button" class="btn btn-primary" id="btnExportPptx2">Download PowerPoint</button>
+    </div>
+
+    <div class="topbar" style="background:#1F3864;color:#fff;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem">
+      <h1 style="font-size:15px;font-weight:600" id="dashTitle">—</h1>
+      <p style="font-size:11px;opacity:.7;margin-top:3px" id="dashMeta">—</p>
+    </div>
+
+    <div class="krow">
+      <div class="kcard" id="dk_total"><div class="lbl">Total Applications</div><div class="val">—</div><div class="sub">—</div></div>
+      <div class="kcard" id="dk_valid"><div class="lbl">Valid Applications</div><div class="val">—</div><div class="sub">—</div></div>
+      <div class="kcard" id="dk_active"><div class="lbl">Active Applications</div><div class="val">—</div><div class="sub">—</div></div>
+      <div class="kcard" id="dk_onhold"><div class="lbl">On Hold</div><div class="val">—</div><div class="sub">—</div></div>
+      <div class="kcard" id="dk_withdrawn"><div class="lbl">Withdrawn</div><div class="val">—</div><div class="sub">—</div></div>
+      <div class="kcard" id="dk_rejected"><div class="lbl">Rejected</div><div class="val">—</div><div class="sub">—</div></div>
+    </div>
+
+    <div class="chart-grid full" style="margin-bottom:1rem">
+      <div class="chart-box">
+        <div class="chart-head">Application Status Overview</div>
+        <div class="chart-body"><canvas id="statusBar"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-grid" style="margin-bottom:1rem">
+      <div class="chart-box">
+        <div class="chart-head">Course-wise Stacked Breakdown</div>
+        <div class="chart-body tall">
+          <div class="legend">
+            <span class="leg-item"><span class="leg-sq" style="background:#375623"></span>Active</span>
+            <span class="leg-item"><span class="leg-sq" style="background:#E36C09"></span>On Hold</span>
+            <span class="leg-item"><span class="leg-sq" style="background:#7030A0"></span>Withdrawn</span>
+            <span class="leg-item"><span class="leg-sq" style="background:#C00000"></span>Rejected</span>
+          </div>
+          <canvas id="stackedBar"></canvas>
+        </div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-head">Total vs Valid by Course</div>
+        <div class="chart-body tall"><canvas id="courseBar"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-grid" style="margin-bottom:1rem">
+      <div class="chart-box">
+        <div class="chart-head">Total by Category</div>
+        <div class="chart-body"><canvas id="catPie"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-head">Status Mix (All Applications)</div>
+        <div class="chart-body"><canvas id="statusPie"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-grid full" id="dailyChartSection" style="margin-bottom:1rem;display:none">
+      <div class="chart-box">
+        <div class="chart-head">Daily Application Trend (from daily log)</div>
+        <div class="chart-body"><canvas id="dailyLine"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panel-card" style="margin-bottom:1rem">
+      <div class="panel-head"><h2>Multi-Intake Comparison</h2></div>
+      <div class="compare-panel">
+        <div class="compare-checks" id="compareIntakeChecks"></div>
+        <div class="chart-box" style="border:none;box-shadow:none">
+          <div class="chart-body tall"><canvas id="intakeCompare"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-card">
+      <div class="panel-head"><h2>Course-wise Full Breakdown</h2></div>
+      <div class="panel-body" style="padding:0;overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Course Category</th>
+              <th class="r">Total</th>
+              <th class="r">Valid</th>
+              <th class="r">Active</th>
+              <th class="r">On Hold</th>
+              <th class="r">Withdrawn</th>
+              <th class="r">Rejected</th>
+              <th class="r">Active %</th>
+            </tr>
+          </thead>
+          <tbody id="breakdownBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- New Intake Modal -->
+<div class="modal-overlay" id="newIntakeModal">
+  <div class="modal">
+    <h3>Create New Intake</h3>
+    <p style="font-size:0.82rem;color:#666;margin-bottom:0.75rem">Each intake runs from the 16th of the start month to the 15th of the following month.</p>
+    <div class="field" style="margin-bottom:0.65rem">
+      <label for="newIntakeName">Report Name</label>
+      <input type="text" id="newIntakeName" placeholder="e.g. June to July intake report">
+    </div>
+    <div class="field" style="margin-bottom:0.65rem">
+      <label for="newStartMonth">Start Month (16th)</label>
+      <select id="newStartMonth"></select>
+    </div>
+    <div class="field" style="margin-bottom:0.65rem">
+      <label for="newStartYear">Year</label>
+      <select id="newStartYear"></select>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" id="btnCancelIntake">Cancel</button>
+      <button type="button" class="btn btn-success" id="btnCreateIntake">Create Intake</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script src="js/dashboard.js"></script>
+<script>
+  document.getElementById('btnExportExcel2').addEventListener('click', () => document.getElementById('btnExportExcel').click());
+  document.getElementById('btnExportPptx2').addEventListener('click', () => document.getElementById('btnExportPptx').click());
+</script>
+</body>
+</html>
